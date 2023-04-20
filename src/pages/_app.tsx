@@ -14,7 +14,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
 export const requestInit = (context: any) => {
   const protocol = "http://";
-  let baseURL = protocol + context?.req?.headers?.host;
+  let baseURL = process.env.baseURL || protocol + context?.req?.headers?.host;
   // if (baseURL?.endsWith("/")) {
   //   baseURL = baseURL.slice(0, -1);
   // }

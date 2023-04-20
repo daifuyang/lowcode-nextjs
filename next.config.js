@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    largePageDataBytes: 128 * 100000,
+  },
   async rewrites() {
     return {
       fallback: [
@@ -7,7 +10,7 @@ const nextConfig = {
         // and dynamic routes are checked
         {
           source: '/api/:api*',
-          destination: `http://localhost:9080/api/:api*`,
+          destination: `${process.env.baseURL}/api/:api*`,
         },
       ],
     }

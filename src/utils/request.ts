@@ -68,7 +68,7 @@ const errorHandler = (error: { response: Response }): Response => {
       //   content: "网络异常"
       // });
     } else {
-      console.log("您的网络发生异常，无法连接服务器");
+      console.log("您的网络发生异常，无法连接服务器", error);
     }
   }
   return response;
@@ -111,6 +111,7 @@ authInstance.interceptors.request.use(
 
 const request = (url: string, config: any) => {
   config.url = url;
+  console.log('instance',instance.defaults.baseURL)
   return instance.request(config).catch(function (error) {
     errorHandler(error);
   });

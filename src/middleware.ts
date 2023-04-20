@@ -1,6 +1,7 @@
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { authInstance, instance } from "@/utils/request";
 const { pathToRegexp, match, parse, compile } = require("path-to-regexp");
 
 const patternFn = (regexp: string, pathname: string) => {
@@ -33,8 +34,7 @@ function allMatch(pathname: string) {
 
 // This function can be marked `async` if using `await` inside
 export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-
+  const { pathname, origin } = req.nextUrl;
   /* 路由约定
    ** / => 首页
    ** /list/:id => 列表页
@@ -53,6 +53,8 @@ export function middleware(req: NextRequest) {
       req.nextUrl.pathname = "404";
     }
   }
+
+  req.nextUrl.searchParams.set("pathname",pathname)
 
   return NextResponse.rewrite(req.nextUrl);
 }
