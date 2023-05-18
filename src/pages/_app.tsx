@@ -32,7 +32,7 @@ export const getSchema = async (pageId: number) => {
   return schema;
 };
 
-export const initDataSource = async (schema: any = {}, defaultState = {}) => {
+export const initDataSource = async (schema: any = {}, defaultState = {},siteId:string) => {
   const context: any = new createState(defaultState);
   const defaultDataSource: DataSource = {
     list: []
@@ -42,7 +42,7 @@ export const initDataSource = async (schema: any = {}, defaultState = {}) => {
 
   const { dataSourceMap, reloadDataSource } = createDataSourceEngine(dataSource ?? {}, context, {
     requestHandlersMap: {
-      fetch: createAxiosFetchHandler()
+      fetch: createAxiosFetchHandler(siteId)
     }
   });
   await reloadDataSource();
@@ -51,7 +51,8 @@ export const initDataSource = async (schema: any = {}, defaultState = {}) => {
   Object.keys(state).forEach((key) => {
     const item = state[key];
     if(item.code) {
-      console.log('request err',item.response)
+      console.log('request err',item.code)
+      // console.log('request err',item.response)
     }else {
       result[key] = item
     }

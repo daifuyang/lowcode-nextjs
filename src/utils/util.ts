@@ -1,3 +1,6 @@
+import React from "react";
+import isBrowser from "./isBrowser";
+
 export const getPageSchema = async (data: any) => {
   const { schema } = data;
   const schemaObj = JSON.parse(schema || "{}");
@@ -28,34 +31,41 @@ export class createState {
  * 3.文章 /article/:id/category-:cid
  * 4.页面 /page/:id
  * 5.标签 /tag/:id
-*/
+ */
 
 export const getListLink = (category: any) => {
-  let link = ''
+  let link = "";
   if (category.id) {
-      link = `/list/${category.id}`
-      const { id, alias } = category
-      if (alias) {
-          link = `/${alias}`
-      }
+    link = `/list/${category.id}`;
+    const { id, alias } = category;
+    if (alias) {
+      link = `/${alias}`;
+    }
   }
-  return link
-}
+  return link;
+};
 
 /*
-*@Author: frank
-*@Date: 2022-07-02 09:52:41
-*@Description: 获取跳转路由链接
-*/
+ *@Author: frank
+ *@Date: 2022-07-02 09:52:41
+ *@Description: 获取跳转路由链接
+ */
 
-export const getPostLink = (post: any = {}) => {
+export const getArticleLink = (post: any = {}) => {
   if (post?.more_json?.alias) {
-      return post?.more_json?.alias
+    return post?.more_json?.alias;
   }
-  let link = 'article'
+  let link = "article";
   if (post?.alias) {
-      link = post.alias
+    link = post.alias;
   }
 
-  return `/${link}/${post.id}`
-}
+  return `/${link}/${post.id}`;
+};
+
+export const getSiteId = () => {
+  if (isBrowser()) {
+    const params: any = new URLSearchParams(location.search.slice(1));
+    return params.get("siteId");
+  }
+};

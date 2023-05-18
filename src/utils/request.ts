@@ -23,7 +23,7 @@ const codeMessage: any = {
   504: "无法连接API服务器，网关超时。"
 };
 
-export function createAxiosFetchHandler(config?: Record<string, unknown>) {
+export function createAxiosFetchHandler(siteId: any, config?: Record<string, unknown>) {
   return async function (options: any) {
     const requestConfig: any = {
       ...options,
@@ -33,6 +33,7 @@ export function createAxiosFetchHandler(config?: Record<string, unknown>) {
       headers: options.headers,
       ...config
     };
+    requestConfig.params.siteId = siteId;
     const response = await instance(requestConfig);
     return response;
   };
@@ -90,6 +91,10 @@ export const authInstance = axios.create({
   responseEncoding: "utf8" // default
 });
 
+const baseURL = process.env.baseURL;
+instance.defaults.baseURL = baseURL;
+authInstance.defaults.baseURL = baseURL;
+
 // 添加请求拦截器
 authInstance.interceptors.request.use(
   function (config: any) {
@@ -111,7 +116,6 @@ authInstance.interceptors.request.use(
 
 const request = (url: string, config: any) => {
   config.url = url;
-  console.log('instance',instance.defaults.baseURL)
   return instance.request(config).catch(function (error) {
     errorHandler(error);
   });
@@ -119,6 +123,8 @@ const request = (url: string, config: any) => {
 
 const authRequest = (url: string, config: any) => {
   config.url = url;
+  // console.log("auth instance", instance.defaults.baseURL);
+  // console.log("auth url", url);
   return authInstance.request(config).catch(function (error) {
     errorHandler(error);
   });

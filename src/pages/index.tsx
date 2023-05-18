@@ -6,53 +6,78 @@ import { getSchema, initDataSource, requestInit } from "./_app";
 import { authInstance, createAxiosFetchHandler, instance } from "@/utils/request";
 import { fetchArticle, fetchArticles, fetchCategory } from "@/services/portal";
 import { listPage } from "@/services/appPage";
-import { getListLink, getPostLink } from "@/utils/util";
+import { getListLink, getArticleLink } from "@/utils/util";
 import { useRouter } from "next/router";
 import moment from "moment";
-import { FC, useEffect } from "react";
-
-// 改成支持next-js的Link链接
-const Breadcrumb: FC<any> = (props: any) => {
-  Breadcrumb.displayName = "Breadcrumb";
-  return <components.Breadcrumb link={NextLink} {...props} />;
-};
-
-const Menu: FC<any> = (props: any) => {
-  Menu.displayName = "Menu";
-  return <components.Menu link={NextLink} {...props} />;
-};
-
-const Pagination: FC<any> = (props: any) => {
-  Menu.displayName = "Pagination";
-  return <components.Pagination link={NextLink} {...props} />;
-};
-
-const Link: FC<any> = (props: any) => {
-  Link.displayName = "Link";
-  return <components.Link link={NextLink} {...props} />;
-};
+import { FC } from "react";
 
 export default function Home(props: any) {
   const router = useRouter();
+  const { siteId = "",hasDomain = false } = props
+  const Link: FC<any> = (props: any) => {
+    Link.displayName = "Link";
+    let _href = props.href || "/";
+    const searchArr = _href?.split("?");
+    let search = "";
+    if (searchArr.length > 1) {
+      search = searchArr[1];
+    }
+    const hasSiteId = !hasDomain && siteId
+    let href = _href;
+    if (hasSiteId) {
+      href = _href + "?siteId=" + siteId;
+    }
+    
+    return <components.Link link={NextLink} {...props} href={href} />;
+  };
+
+  // 改成支持next-js的Link链接
+  const Breadcrumb: FC<any> = (props: any) => {
+    Breadcrumb.displayName = "Breadcrumb";
+    return <components.Breadcrumb link={Link} {...props} />;
+  };
+
+  const ZUiMenu: FC<any> = (props: any) => {
+    return <components.ZUiMenu link={Link} {...props} />;
+  };
+
+  const Pagination: FC<any> = (props: any) => {
+    Pagination.displayName = "Pagination";
+    return <components.Pagination link={Link} {...props} />;
+  };
+
+  const navigatorTo = (data: any, type: string) => {
+    let url;
+    if (type == "article") {
+      url = getArticleLink(data);
+    } else {
+      url = getListLink(data);
+    }
+    if (!hasDomain) {
+      url = url + "?siteId=" + siteId;
+    }
+    router.push(url);
+  };
+
   return (
     <ReactRenderer
       components={{
         ...components,
         Breadcrumb,
-        Menu,
+        ZUiMenu,
         Pagination,
         Link
       }}
       {...props}
       appHelper={{
         utils: {
+          navigatorTo,
           getListLink,
-          getPostLink,
-          router,
+          getArticleLink,
           moment
         },
         requestHandlersMap: {
-          fetch: createAxiosFetchHandler()
+          fetch: createAxiosFetchHandler(siteId)
         }
       }}
     />
@@ -94,18 +119,32 @@ const assignSchema = (data: any, schema: any, position: "start" | "end" = "end")
 };
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  
-  const baseURL = process.env.baseURL;
-  instance.defaults.baseURL = baseURL;
-  authInstance.defaults.baseURL = baseURL;
-  
-
   let props: any = {
     schema: {}
   };
   const state: any = {};
   const { query = {} }: any = context;
-  const { pathname } = query;
+  const { pathname, siteId, hasDomain = '' } = query;
+
+  props.siteId = siteId
+  props.hasDomain = hasDomain
+
+  instance.interceptors.request.use(function (config: any) {
+    if (!config.params) {
+      config.params = {};
+    }
+    config.params.siteId = siteId;
+    return config;
+  });
+
+  authInstance.interceptors.request.use(function (config: any) {
+    if (!config.params) {
+      config.params = {};
+    }
+    config.params.siteId = siteId;
+    return config;
+  });
+
   if (pathname === "/") {
     props.schema = await getSchema(1);
   } else if (!!query?.location) {
@@ -132,7 +171,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
       const res: any = await fetchCategory(id);
       if (res?.code != 1) {
-        console.error("fetchArticle response not found");
+        console.error("fetchArticle response not found",res.msg);
         return {
           notFound: true
         };
@@ -235,16 +274,17 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   }
 
   // 可以执行数据初始化
-  const apiState = await initDataSource(schema, state);
-  props.schema = schema;
-  props.schema.state = { ...state, ...apiState };
+  const apiState = await initDataSource(schema, state, siteId) || {};
 
-  console.log("index", props);
+  props.schema = schema;
+  
+  props.schema.state = { ...state, ...apiState };
 
   // const { dataSource: { list = [] } = {} } = schema;
   // list.forEach((item: any) => {
   //   item.isInit = false;
   // });
+
   return {
     props
   };
